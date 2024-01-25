@@ -1,28 +1,42 @@
 import { useDispatch, useSelector } from 'react-redux';
 import css from './ContactsList.module.css';
 import { ContactFormButton } from 'components';
-import { deleteContact, getContacts } from './../../redux/contactsSlice';
-import { getFilter } from './../../redux/filterSlice';
+import {
+  selectIsLoading,
+  selectFilteredContacts,
+} from './../../redux/selectors';
+import { useState } from 'react';
+import { deleteContact, fetchContacts } from './../../redux/operations';
+import { toast } from 'react-toastify';
 
 export const ContactsList = () => {
-  const contacts = useSelector(getContacts);
-  const filter = useSelector(getFilter);
+  const isLoading = useSelector(selectIsLoading);
+  const contacts = useSelector(selectFilteredContacts);
+
   const dispatch = useDispatch();
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  useState(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
+
+  const onDelete = id => {
+    dispatch(deleteContact(id))
+      .unwrap()
+      .catch(error => {
+        toast.error(error);
+      });
+  };
+
   return (
     <>
-      {filteredContacts.length > 0 && (
+      {isLoading && <h3>Loading...</h3>}
+
+      {contacts.length > 0 && (
         <ul className={css.contactsList}>
-          {filteredContacts.map(({ id, name, number }, index) => (
+          {contacts.map(({ id, name, phone }, index) => (
             <li key={id} className={css.contactListItem}>
-              <p>{`${++index}. ${name}: ${number}`}</p>
-              <ContactFormButton
-                text="Delete"
-                onClick={() => dispatch(deleteContact(id))}
-              />
+              <p>{`${++index}. ${name}: ${phone}`}</p>
+              <ContactFormButton text="Delete" onClick={() => onDelete(id)} />
             </li>
           ))}
         </ul>
